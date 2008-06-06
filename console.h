@@ -11,6 +11,10 @@ typedef wchar_t tchar;
 typedef std::wstring stdstr;
 #endif
 
+#include <cassert>
+
+/*=========================== point ===========================*/
+
 class point {
 public:
     point() : x(0), y(0) {}
@@ -19,6 +23,8 @@ public:
     short x;
     short y;
 };
+
+/*=========================== rect ===========================*/
 
 class rect {
 public:
@@ -50,11 +56,13 @@ inline bool rect::intersect(rect& dest, const rect& src) const
     return true;    
 }
 
+/*=========================== console ===========================*/
+
 enum consolecolor {
-    CC_BLUE         = 0x0001,
-    CC_GREEN        = 0x0002,
-    CC_RED          = 0x0004, 
-    CC_INTENSITY    = 0x0008,
+    COLOR_BLUE         = 0x0001,
+    COLOR_GREEN        = 0x0002,
+    COLOR_RED          = 0x0004, 
+    COLOR_INTENSITY    = 0x0008,
 };
 
 class console {
@@ -62,14 +70,48 @@ public:
     console();
     ~console();
     
-    void movewnd(const rect& rc);
-    void putc(tchar c, point pt, int forecolor=0x0F, int bkcolor=0);
+    const rect& wndrect() const { return m_wndrect; }
+    void movewnd(const rect& rc);    
+    
+    void textout(tchar c, point pt, int forecolor=0x0F, int bkcolor=0);
     void textout(const stdstr& s, point pt, int forecolor=0x0F, int bkcolor=0);
-    void drawrect(const rect& rc, int color);    
+    void drawrect(const rect& rc, int color);
+
+    void cursorvisible(bool visible);
+    bool cursorvisible() const;    
+    void cursorsize(int size); // 1-100
+    int cursorsize() const;
+    void cursorpos(point pos); // can't set cursor out of window
+    point cursorpos() const;
+
+    void codepage()
+    {
+        unsigned char i;
+        int cp = GetConsoleOutputCP();
+        //SetConsoleOutputCP(437);
+        for (i=0; i<16; ++i) {
+            if (i < 10)
+                textout((tchar)i+'0', point(i+1, 0));
+            else 
+                textout((tchar)i-10+'A', point(i+1, 0));
+        }
+
+        for (unsigned char i=0; i<256;++i) {
+            if (i != '\f' && 
+                i != '\n' &&
+                i != '\r' &&
+                i != '\t' &&
+                i != '\b')                
+                textout((tchar)i, point(i%16, i/16+1));
+        }
+        //SetConsoleOutputCP(cp);
+    }
 
 private:   
     HANDLE m_hout;    
     rect m_wndrect;
+    CONSOLE_CURSOR_INFO m_cci;
+    point m_cursorpos;
 };
 
 inline
@@ -83,6 +125,9 @@ console::console()
     m_wndrect.l = m_wndrect.t = 0;
     m_wndrect.r = csbi.srWindow.Right - csbi.srWindow.Left + m_wndrect.l;
     m_wndrect.b = csbi.srWindow.Bottom - csbi.srWindow.Top + m_wndrect.t;
+
+    m_cci.bVisible = TRUE;
+    m_cci.dwSize = 1;
 }
 
 inline
@@ -99,11 +144,11 @@ void console::movewnd(const rect& rc)
     
     m_wndrect.l = m_wndrect.t = 0;
     m_wndrect.r = rc.r - rc.l + m_wndrect.l;
-    m_wndrect.b = rc.b - rc.t + m_wndrect.t;
+    m_wndrect.b = rc.b - rc.t + m_wndrect.t;    
 }
 
 inline
-void console::putc(tchar c, point pt, int forecolor, int bkcolor)
+void console::textout(tchar c, point pt, int forecolor, int bkcolor)
 {
     if (m_wndrect.pointin(pt)) {   
         FillConsoleOutputAttribute(m_hout, forecolor|(bkcolor<<4), 1, pt.tocoord_copy() , NULL);
@@ -145,4 +190,46 @@ void console::drawrect(const rect& rc, int color)
             FillConsoleOutputAttribute(m_hout, color<<4, intersect.w(), point(intersect.l, y).tocoord_copy() , NULL);
         }
     }
+}
+
+inline
+void console::cursorvisible(bool visible)
+{    
+    m_cci.bVisible = visible ? TRUE : FALSE;    
+    SetConsoleCursorInfo(m_hout, &m_cci);
+}
+
+inline
+bool console::cursorvisible() const
+{
+    return m_cci.bVisible ? true : false;
+}
+
+inline
+void console::cursorsize(int size)
+{
+    assert(1 <= size && size <= 100);
+    m_cci.dwSize = (DWORD)size;
+    SetConsoleCursorInfo(m_hout, &m_cci);
+}
+
+inline
+int console::cursorsize() const
+{
+    return m_cci.dwSize;
+}
+
+inline
+void console::cursorpos(point pos)
+{    
+    assert(m_wndrect.pointin(pos) && "Can't set cursor out of window");
+    SetConsoleCursorPosition(m_hout, pos.tocoord_copy());
+}
+
+inline
+point console::cursorpos() const
+{
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(m_hout, &csbi);
+    return point(csbi.dwCursorPosition.X, csbi.dwCursorPosition.Y);
 }
