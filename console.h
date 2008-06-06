@@ -58,12 +58,10 @@ inline bool rect::intersect(rect& dest, const rect& src) const
 
 /*=========================== console ===========================*/
 
-enum consolecolor {
-    COLOR_BLUE         = 0x0001,
-    COLOR_GREEN        = 0x0002,
-    COLOR_RED          = 0x0004, 
-    COLOR_INTENSITY    = 0x0008,
-};
+#define COLOR_BLUE      0x0001
+#define COLOR_GREEN     0x0002
+#define COLOR_RED       0x0004 
+#define COLOR_INTENSITY 0x0008
 
 class console {
 public:
@@ -84,34 +82,18 @@ public:
     void cursorpos(point pos); // can't set cursor out of window
     point cursorpos() const;
 
-    void codepage()
-    {
-        unsigned char i;
-        int cp = GetConsoleOutputCP();
-        //SetConsoleOutputCP(437);
-        for (i=0; i<16; ++i) {
-            if (i < 10)
-                textout((tchar)i+'0', point(i+1, 0));
-            else 
-                textout((tchar)i-10+'A', point(i+1, 0));
-        }
-
-        for (unsigned char i=0; i<256;++i) {
-            if (i != '\f' && 
-                i != '\n' &&
-                i != '\r' &&
-                i != '\t' &&
-                i != '\b')                
-                textout((tchar)i, point(i%16, i/16+1));
-        }
-        //SetConsoleOutputCP(cp);
-    }
+    // NOTE: if code page changed, all the character has been draw onto console will use this codepage
+    // different code page cause different character size
+    void codepage(int cp);
+    int codepage() const;        
+    void drawcodepage(point pt=point(0,0));
 
 private:   
     HANDLE m_hout;    
     rect m_wndrect;
     CONSOLE_CURSOR_INFO m_cci;
     point m_cursorpos;
+    int m_defcodepage;
 };
 
 inline
@@ -128,6 +110,8 @@ console::console()
 
     m_cci.bVisible = TRUE;
     m_cci.dwSize = 1;
+
+    m_defcodepage = codepage();
 }
 
 inline
@@ -159,7 +143,7 @@ void console::textout(tchar c, point pt, int forecolor, int bkcolor)
 inline
 void console::textout(const stdstr& s, point pt, int forecolor, int bkcolor)
 {
-    short len = s.length();
+    short len = (short)s.length();
     short r = pt.x + len - 1;
     if (r < m_wndrect.l || pt.x > m_wndrect.r || 
         pt.y < m_wndrect.t || pt.y > m_wndrect.b)
@@ -232,4 +216,31 @@ point console::cursorpos() const
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(m_hout, &csbi);
     return point(csbi.dwCursorPosition.X, csbi.dwCursorPosition.Y);
+}
+
+void console::codepage(int cp)
+{
+    SetConsoleOutputCP(UINT(cp));
+}
+
+int console::codepage() const
+{
+    return (int)GetConsoleOutputCP();
+}
+
+void console::drawcodepage(point pt)
+{
+    int i;
+    const tchar hex[16] = 
+    {TEXT('0'),TEXT('1'),TEXT('2'),TEXT('3'),TEXT('4'),TEXT('5'),TEXT('6'),TEXT('7'),TEXT('8'),TEXT('9'),
+     TEXT('A'),TEXT('B'),TEXT('C'),TEXT('D'),TEXT('E'),TEXT('F')};    
+
+    for (i=0; i<16; ++i)
+        textout(hex[i], point(i+1+pt.x, 0+pt.y));
+
+    for (i=0; i<256; ++i) {
+        if (i%16 == 0)
+            textout(hex[i/16], point(0+pt.x, i/16+1+pt.y));
+        textout(i, point(i%16+1+pt.x, i/16+1+pt.y));
+    }
 }
