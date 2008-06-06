@@ -58,10 +58,11 @@ inline bool rect::intersect(rect& dest, const rect& src) const
 
 /*=========================== console ===========================*/
 
-#define COLOR_BLUE      0x0001
-#define COLOR_GREEN     0x0002
-#define COLOR_RED       0x0004 
-#define COLOR_INTENSITY 0x0008
+#define COLOR_BLUE          0x0001
+#define COLOR_GREEN         0x0002
+#define COLOR_RED           0x0004 
+#define COLOR_INTENSITY     0x0008
+#define BK_TRANSPARENT      0x0010
 
 class console {
 public:
@@ -73,6 +74,8 @@ public:
     
     void textout(tchar c, point pt, int forecolor=0x0F, int bkcolor=0);
     void textout(const stdstr& s, point pt, int forecolor=0x0F, int bkcolor=0);
+
+    void setpixcel(point pos, int color);
     void drawrect(const rect& rc, int color);
 
     void cursorvisible(bool visible);
@@ -134,9 +137,19 @@ void console::movewnd(const rect& rc)
 inline
 void console::textout(tchar c, point pt, int forecolor, int bkcolor)
 {
-    if (m_wndrect.pointin(pt)) {   
-        FillConsoleOutputAttribute(m_hout, forecolor|(bkcolor<<4), 1, pt.tocoord_copy() , NULL);
-        FillConsoleOutputCharacter(m_hout, c, 1, pt.tocoord_copy() , NULL);
+    if (m_wndrect.pointin(pt)) {
+        WORD attr; 
+        DWORD read;
+        if (bkcolor == BK_TRANSPARENT) {
+            ReadConsoleOutputAttribute(m_hout, &attr, 1, pt.tocoord_copy(), &read);
+            // keep background color and replace foreground color
+            attr = (attr&0xF0) | forecolor;
+        }
+        else
+            attr = (WORD)(forecolor|(bkcolor<<4));
+
+        FillConsoleOutputAttribute(m_hout, attr, 1, pt.tocoord_copy(), NULL);
+        FillConsoleOutputCharacter(m_hout, c, 1, pt.tocoord_copy(), NULL);
     }
 }
 
@@ -158,8 +171,25 @@ void console::textout(const stdstr& s, point pt, int forecolor, int bkcolor)
 
     stdstr subs = s.substr(lt.x - pt.x, len);
 
-    FillConsoleOutputAttribute(m_hout, forecolor|(bkcolor<<4), len, lt.tocoord_copy() , NULL);
-    WriteConsoleOutputCharacter(m_hout, subs.c_str(), len, lt.tocoord_copy(), NULL);
+    if (bkcolor == BK_TRANSPARENT) {
+        for (short i=0; i<len; ++i)
+            textout(subs.c_str()[i], point(lt.x+i, lt.y), forecolor, bkcolor);
+    }
+    else {
+        FillConsoleOutputAttribute(m_hout, forecolor|(bkcolor<<4), len, lt.tocoord_copy() , NULL);
+        WriteConsoleOutputCharacter(m_hout, subs.c_str(), len, lt.tocoord_copy(), NULL);
+    }
+}
+
+inline
+void console::setpixcel(point pos, int color)
+{
+    if (m_wndrect.pointin(pos)) {
+        // erase characters in rect
+        FillConsoleOutputCharacter(m_hout, TEXT(' '), 1, pos.tocoord_copy() , NULL);
+        // draw background color     
+        FillConsoleOutputAttribute(m_hout, color<<4, 1, pos.tocoord_copy() , NULL);
+    }
 }
 
 inline
@@ -218,16 +248,19 @@ point console::cursorpos() const
     return point(csbi.dwCursorPosition.X, csbi.dwCursorPosition.Y);
 }
 
+inline
 void console::codepage(int cp)
 {
     SetConsoleOutputCP(UINT(cp));
 }
 
+inline
 int console::codepage() const
 {
     return (int)GetConsoleOutputCP();
 }
 
+inline
 void console::drawcodepage(point pt)
 {
     int i;
