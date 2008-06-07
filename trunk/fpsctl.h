@@ -2,10 +2,10 @@
 
 #include <windows.h>
 
-class fpser {
+class fpsctl {
 public:
-    fpser(int fps=30);
-    void update();
+    fpsctl(int fps=30);
+    void wait();
     int fps() const;
     int mspf() const;
 
@@ -16,7 +16,7 @@ private:
 };
 
 inline
-fpser::fpser(int fps)
+fpsctl::fpsctl(int fps)
 {
     m_fps = fps;
     m_mspf = 1000 / m_fps;
@@ -24,7 +24,7 @@ fpser::fpser(int fps)
 }
 
 inline
-void fpser::update()
+void fpsctl::wait()
 {
     int pastticks = (int)GetTickCount() - m_lasttick;
     if (pastticks < m_mspf) 
@@ -33,13 +33,13 @@ void fpser::update()
 }
 
 inline 
-int fpser::fps() const
+int fpsctl::fps() const
 {
     return m_fps;
 }
 
 inline 
-int fpser::mspf() const
+int fpsctl::mspf() const
 {
     return m_mspf;
 }
