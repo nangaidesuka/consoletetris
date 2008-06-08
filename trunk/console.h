@@ -93,6 +93,8 @@ public:
     /* do drawing */
 
     void clearscreen(color c=black);
+    void flip() {SetConsoleActiveScreenBuffer(m_hout);
+        std::swap(m_hout, m_hout2);}
 
     void textout(tchar c, point pt, color forecolor=white, color bkcolor=transparent);
     void textout(const stdstr& s, point pt, color forecolor=white, color bkcolor=transparent);   
@@ -116,13 +118,13 @@ public:
     void codepage(int cp);
     int codepage() const;  
 
-#ifndef NDEBUG    
+#ifdef _DEBUG    
     void drawcodepage();
 #endif    
 
     /* other */
 
-#ifndef NDEBUG
+#ifdef _DEBUG
     void drawcolortab();
 #endif
     
@@ -131,6 +133,7 @@ public:
     
 private:   
     HANDLE m_hout; 
+    HANDLE m_hout2;
     bool m_fullscreen;
     rect m_wndrect;
     CONSOLE_CURSOR_INFO m_cci;
