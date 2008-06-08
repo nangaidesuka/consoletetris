@@ -1,5 +1,5 @@
 #include "console.h"
-#include "fpscontrol.h"
+#include "fpsctl.h"
 #include <assert.h>
 #include <stdio.h>
 #include <vector>
@@ -8,7 +8,7 @@
 void main()
 {       
     
-    fpscontrol fpsctl;     
+    fpsctl thefpsctl;
     console con;
     input i;
     con.movewnd(rect(0,0,40,25));
@@ -29,7 +29,7 @@ void main()
         /*con.textout("", point(0,0), */
 
         con.flip();
-        fpsctl.wait();        
+        thefpsctl.wait();        
     }    
     
 }
