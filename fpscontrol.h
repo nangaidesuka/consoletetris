@@ -2,9 +2,9 @@
 
 #include <windows.h>
 
-class fpsctl {
+class fpscontrol {
 public:
-    fpsctl(int fps=30);
+    fpscontrol(int fps=30);
     void wait();
     int fps() const;
     int mspf() const;
@@ -16,7 +16,7 @@ private:
 };
 
 inline
-fpsctl::fpsctl(int fps)
+fpscontrol::fpscontrol(int fps)
 {
     m_fps = fps;
     m_mspf = 1000 / m_fps;
@@ -24,7 +24,7 @@ fpsctl::fpsctl(int fps)
 }
 
 inline
-void fpsctl::wait()
+void fpscontrol::wait()
 {
     int pastticks = (int)GetTickCount() - m_lasttick;
     if (pastticks < m_mspf) 
@@ -33,13 +33,13 @@ void fpsctl::wait()
 }
 
 inline 
-int fpsctl::fps() const
+int fpscontrol::fps() const
 {
     return m_fps;
 }
 
 inline 
-int fpsctl::mspf() const
+int fpscontrol::mspf() const
 {
     return m_mspf;
 }

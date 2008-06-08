@@ -33,6 +33,14 @@ console::console()
 
     m_cci.bVisible = TRUE;
     m_cci.dwSize = 1;  
+
+    m_hout2 = CreateConsoleScreenBuffer( 
+       GENERIC_READ |           // read/write access 
+       GENERIC_WRITE, 
+       0,                       // not shared 
+       NULL,                    // default security attributes 
+       CONSOLE_TEXTMODE_BUFFER, // must be TEXTMODE 
+       NULL);                   // reserved; must be NULL     
 }
 
 console::~console()
@@ -43,10 +51,12 @@ console::~console()
 void console::fullscreen(bool set)
 {    
     if (m_fullscreen ^ set) {
-        keybd_event(VK_MENU, 0x38, 0, 0);
+    /*    keybd_event(VK_MENU, 0x38, 0, 0);
         keybd_event(VK_RETURN, 0x1c, 0, 0);
         keybd_event(VK_RETURN, 0x1c, KEYEVENTF_KEYUP, 0);
-        keybd_event(VK_MENU, 0x38, KEYEVENTF_KEYUP, 0);
+        keybd_event(VK_MENU, 0x38, KEYEVENTF_KEYUP, 0);*/
+        COORD newdim;
+        SetConsoleDisplayMode(m_hout, CONSOLE_FULLSCREEN_MODE, &newdim);
         
         CONSOLE_SCREEN_BUFFER_INFO csbi;
         GetConsoleScreenBufferInfo(m_hout, &csbi);         
@@ -80,6 +90,8 @@ void console::movewnd(const rect& rc)
 {    
     SetConsoleWindowInfo(m_hout, true, &rc.tosmallrect_copy());        
     SetConsoleScreenBufferSize(m_hout, point(rc.w(), rc.h()).tocoord_copy()); 
+    SetConsoleWindowInfo(m_hout2, true, &rc.tosmallrect_copy());        
+    SetConsoleScreenBufferSize(m_hout2, point(rc.w(), rc.h()).tocoord_copy());
     
     m_wndrect.l = m_wndrect.t = 0;
     m_wndrect.r = rc.r - rc.l + m_wndrect.l;
@@ -230,7 +242,7 @@ int console::codepage() const
     return (int)GetConsoleOutputCP();
 }
 
-#ifndef NDEBUG
+#ifdef _DEBUG
 void console::drawcodepage()
 {   
     const point pt(0, 0);
@@ -255,7 +267,7 @@ void console::drawcodepage()
 }
 #endif
 
-#ifndef NDEBUG
+#ifdef _DEBUG
 void console::drawcolortab()
 {    
     textout(TEXT("red      "), point(0,0), black, red);
@@ -287,6 +299,7 @@ input::input()
 {
     m_hin = GetStdHandle(STD_INPUT_HANDLE);    
     SetConsoleMode(m_hin, ENABLE_MOUSE_INPUT);
+    //SetConsoleMode(m_hin, ENABLE_WINDOW_INPUT);
 
     memset(m_keys, 0, DIM(m_keys));
     memset(m_lastkeys, 0, DIM(m_lastkeys));
@@ -370,6 +383,9 @@ void input::update()
             else /*(rec.Event.MouseEvent.dwEventFlags == MOUSE_WHEELED)*/ {
                 // DO NOTHING
             }
+        case WINDOW_BUFFER_SIZE_EVENT:
+            int i = 0; ++i;
+            break;
         } // end switch 
     } // end while
 }
