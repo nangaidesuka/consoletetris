@@ -1,4 +1,5 @@
 #include "console1.h"
+#include <assert.h>
 
 #define DIM(array) (sizeof(array) / sizeof(*array))
 #define ZEROARRAY(array) memset(array, 0, sizeof(array));
@@ -14,6 +15,16 @@ const char* invalidhandle::what() const
         "Invalid handle: 0x%0x\n"
         "Error code: %d", 
         (long)m_handle, GetLastError());
+    return buf;
+}
+
+
+const char* unsupportsize::what() const
+{
+    static char buf[256];
+    sprintf_s(buf, DIM(buf),
+        "Unsupport size: %d x %d",
+        m_size->w, m_size->h);
     return buf;
 }
 
@@ -48,20 +59,56 @@ draw::draw(size wndsize)
 
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(m_backbuf, &csbi);
-    SetConsoleScreenBufferSize(m_backbuf, size(80, 300));
-    GetConsoleScreenBufferInfo(m_backbuf, &csbi);
     
+    if (wndsize.w > csbi.dwMaximumWindowSize.X ||
+        wndsize.h > csbi.dwMaximumWindowSize.Y)
+    {
+        CloseHandle(m_backbuf);
+        throw unsupportsize(wndsize);
+    }
+    
+    m_wndrect = rectangle(point(0,0), wndsize);
 
-#if 0
-    m_csbi.dwSize;//80,300
-    m_csbi.dwCursorPosition;//0,0
-    m_csbi.wAttributes;//黑底白字
-    m_csbi.srWindow;//0,0,79,24
-    m_csbi.dwMaximumWindowSize;//80,44
-#endif
+    SMALL_RECT rect = m_wndrect;
+    /* 注意必须先修改窗口大小, 否则会出现缓冲区小于窗口的错误 */
+    SetConsoleWindowInfo(m_mainbuf, true, &rect);
+    SetConsoleWindowInfo(m_backbuf, true, &rect);
+    SetConsoleScreenBufferSize(m_mainbuf, wndsize);    
+    SetConsoleScreenBufferSize(m_backbuf, wndsize);
 }
 
-void draw::drawpixel() {}
+draw::~draw()
+{
+    CloseHandle(m_backbuf);
+}
+
+void draw::clear(color c)
+{
+    if (c == transparent)
+        return;
+
+    COORD coord = { 0, 0 };
+    FillConsoleOutputAttribute(m_backbuf, makecolor(white, c), m_wndrect.area(), coord, NULL);
+    FillConsoleOutputCharacterA(m_backbuf, ' ', m_wndrect.area(), coord, NULL);
+}
+
+void draw::flip()
+{
+    SetConsoleActiveScreenBuffer(m_backbuf);
+    std::swap(m_mainbuf, m_backbuf);
+}
+
+void draw::drawpixel(position pos, color c)
+{
+    if (c == transparent)
+        return;
+
+    if (m_wndrect.pointin(pos)) {  
+        FillConsoleOutputAttribute(m_backbuf, makecolor(white, c), 1, pos, NULL);
+        FillConsoleOutputCharacter(m_backbuf, ' ', 1, pos, NULL);
+    }
+}
+
 void draw::drawline() {}
 void draw::drawrect() {}
 void draw::drawtext() {}

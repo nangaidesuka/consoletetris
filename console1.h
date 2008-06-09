@@ -16,6 +16,17 @@ private:
     HANDLE m_handle;
 };
 
+class size;
+class unsupportsize : public std::exception {
+public:
+    unsupportsize(size sz);
+    ~unsupportsize();
+    const char* what() const;
+
+private:
+    size* m_size;
+};
+
 /*========================= point =========================*/
 
 class point {
@@ -75,7 +86,7 @@ public:
     short bottom;
 };
 
-/*========================= color =========================*/
+/*========================= draw ==========================*/
 
 enum { intensity = 0x0008 };
 enum color {
@@ -98,18 +109,17 @@ enum color {
     transparent = 0x10,
 };
 
-/*========================= draw ==========================*/
-
 /*
 ** 具有双缓冲的绘图窗口
 */
 class draw {
 public:
-    draw(size wndsize);    
-    void clearscreen(color c);
+    draw(size wndsize); 
+    ~draw();
+    void clear(color c=black);
     void flip();
     
-    void drawpixel();
+    void drawpixel(position pos, color c);
     void drawline();
     void drawrect();
     void drawtext();
@@ -117,16 +127,19 @@ public:
     position homepos() const;
 
 private:
+    short makecolor(color forecolor, color backcolor) const;
+
     HANDLE m_mainbuf;
     HANDLE m_backbuf;
-    size m_wndsize;
+    rectangle m_wndrect;
 };
 
 /*========================= input =========================*/
 
+enum button { leftbutton, rightbutton, middlebutton };
+
 class input {
-public:
-    enum button { leftbutton, rightbutton, middlebutton };
+public:   
 
     input();
     void update();
@@ -157,6 +170,14 @@ inline
 invalidhandle::invalidhandle(HANDLE handle)
 : m_handle(handle)
 {}
+
+inline
+unsupportsize::unsupportsize(size sz)
+{ m_size = new size(sz); }
+
+inline
+unsupportsize::~unsupportsize()
+{ delete m_size; }
 
 /*========================= point =========================*/
 
@@ -289,6 +310,10 @@ bool rectangle::pointin(point pt) const
 inline 
 position draw::homepos() const
 { return point(0, 0); }
+
+inline 
+short draw::makecolor(color forecolor, color backcolor) const
+{ return (backcolor<<4) | forecolor; }
 
 /*========================= input =========================*/
 
