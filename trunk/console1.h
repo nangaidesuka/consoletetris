@@ -78,7 +78,7 @@ public:
     long area() const;
 
     bool pointin(point pt) const;
-    bool intersect(const rectangle& src, rectangle& dest) const;
+    bool intersect(const rectangle& rhs, rectangle& res) const;
 
     short left;
     short top;
@@ -120,14 +120,24 @@ public:
     void flip();
     
     void drawpixel(position pos, color c);
-    void drawline();
-    void drawrect();
-    void drawtext();
+    void drawlineh(position pos, short length, color c);
+    void drawlinev(position pos, short length, color c);
+    void drawrect(const rectangle& rect, color c);        
+    /* 占两个字符宽的比如汉字在边界处可能绘制不出来*/    
+    void drawtext(const std::string& s, position pos, color forecolor=white, color bkcolor=transparent);      
+    void drawtext(const std::wstring& s, position pos, color forecolor=white, color bkcolor=transparent);
 
-    position homepos() const;
+    static position homepos();
 
-private:
-    short makecolor(color forecolor, color backcolor) const;
+    /* 只在一帧内有效 */
+    HANDLE rawhandle() const;
+
+private:    
+    void showcursor(bool show=true);
+    static WORD makecolor(color forecolor, color backcolor);
+    static void chforecolor(WORD& attr, color forecolor);
+    static bool checkascii(char c);
+    static bool checkascii(wchar_t c);
 
     HANDLE m_mainbuf;
     HANDLE m_backbuf;
@@ -152,7 +162,7 @@ public:
 
     position mousepos() const;
 
-    HANDLE safehandle() const;
+    HANDLE rawhandle() const;
 
 private:
     HANDLE m_inputhandle;
@@ -254,7 +264,7 @@ rectangle::rectangle(point topleft, point bottomright)
 inline 
 rectangle::rectangle(point topleft, size sz)
 : left(topleft.x), top(topleft.y)
-, right(sz.w), bottom(sz.h)
+, right(topleft.x+sz.w), bottom(topleft.y+sz.h)
 {}
 
 inline 
@@ -308,24 +318,47 @@ bool rectangle::pointin(point pt) const
 /*========================= draw ==========================*/
 
 inline 
-position draw::homepos() const
+position draw::homepos()
 { return point(0, 0); }
 
+inline
+HANDLE draw::rawhandle() const
+{ return m_backbuf; }
+
 inline 
-short draw::makecolor(color forecolor, color backcolor) const
+WORD draw::makecolor(color forecolor, color backcolor)
 { return (backcolor<<4) | forecolor; }
+
+inline 
+void draw::chforecolor(WORD& attr, color forecolor)
+{ attr = (attr&0xF0) | forecolor; }
+
+inline 
+bool draw::checkascii(char c) 
+{ return 0 <= c && c <= 127; }
+
+inline 
+bool draw::checkascii(wchar_t c)
+{ 
+    char buf[2];
+    memcpy(buf, &c, 2);
+    int n = 1;
+    if (*(char*)&n) /* 小尾 */
+        std::swap(buf[0], buf[1]);
+    return (buf[0] == 0) && checkascii(buf[1]);
+}
 
 /*========================= input =========================*/
 
 inline
 bool input::keydown(int virtualkey)
-{ return m_keysdown[virtualkey]; }
+{ return m_keysdown[toupper(virtualkey)]; }
 
 inline
 bool input::keyclick(int virtualkey)
 {
-    return m_keysdown[virtualkey]
-        && !m_lastkeysdown[virtualkey];
+    return m_keysdown[toupper(virtualkey)]
+        && !m_lastkeysdown[toupper(virtualkey)];
 }
 
 inline
@@ -348,7 +381,7 @@ position input::mousepos() const
 { return m_mousepos; }
 
 inline
-HANDLE input::safehandle() const
+HANDLE input::rawhandle() const
 { return m_inputhandle; }
 
 }
