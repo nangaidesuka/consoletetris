@@ -15,18 +15,23 @@ void main()
     int x = 0;
     while (1) { 
         i.update();
-        con.clear(yellow);
-        con.drawpixel(position(x, y++), green_i);
-        if (i.keydown(VK_LEFT)) 
+        con.clear(yellow);        
+        con.drawrect(rectangle(x, y, 5+x, 5+y), blue);
+        con.drawpixel(position(0, 1), green_i);
+        con.drawlinev(point(1,1), 7, magenta);
+        if (i.keydown('a')) 
             --x;
-        if (i.keydown(VK_RIGHT))
+        if (i.keydown('d'))
             ++x;
-
+        if (i.keydown(VK_UP)) 
+            --y;
+        if (i.keydown(VK_DOWN))
+            ++y;
+        con.drawtext(L"d·Àfdafdsafµ¯", position(0,0), red);        
         char buffer[100];
-        char buffer2[100];
         sprintf_s(buffer, 100, "(%d,%d)", i.mousepos().x, i.mousepos().y);
         //con.textout(buffer, point(0, y++), console::green);
-        if ( y>30) y=0;
+        if ( y>20) y=0;
         //printf("%d, %d", i.mousepos().x, i.mousepos().y);
         /*con.textout("", point(0,0), */
 
