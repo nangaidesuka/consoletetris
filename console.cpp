@@ -1,6 +1,6 @@
 #include "console.h"
 
-#define DIM(array) (sizeof(array)/sizeof(*array))
+#define dim(array) (sizeof(array)/sizeof(*array))
 
 /*=========================== rect ===========================*/
 
@@ -301,10 +301,10 @@ input::input()
     SetConsoleMode(m_hin, ENABLE_MOUSE_INPUT);
     //SetConsoleMode(m_hin, ENABLE_WINDOW_INPUT);
 
-    memset(m_keys, 0, DIM(m_keys));
-    memset(m_lastkeys, 0, DIM(m_lastkeys));
-    memset(m_btns, 0, DIM(m_btns));
-    memset(m_lastbtns, 0, DIM(m_lastbtns));
+    memset(m_keys, 0, dim(m_keys));
+    memset(m_lastkeys, 0, dim(m_lastkeys));
+    memset(m_btns, 0, dim(m_btns));
+    memset(m_lastbtns, 0, dim(m_lastbtns));
 }
 
 bool input::keydown(int vk) const
@@ -339,13 +339,13 @@ point input::mousepos() const
 
 void input::update()
 {    
-    for (int i=0; i< DIM(m_keys); ++i) 
+    for (int i=0; i< dim(m_keys); ++i) 
         m_lastkeys[i] = m_keys[i];
 
-    for (int i=0; i< DIM(m_btns); ++i) 
+    for (int i=0; i< dim(m_btns); ++i) 
         m_lastbtns[i] = m_btns[i];
     
-    memset(m_btndblclk, 0, DIM(m_btndblclk));
+    memset(m_btndblclk, 0, dim(m_btndblclk));
     
     while (1) {
         DWORD eventcnt; 

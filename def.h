@@ -1,4 +1,4 @@
-#define DIM(array) (sizeof(array)/sizeof(*array))
+#define dim(array) (sizeof(array)/sizeof(*array))
 
 #define SCREENW 640
 #define SCREENH 480

@@ -120,12 +120,12 @@ public:
     void flip();
     
     void drawpixel(position pos, color c);
-    void drawlineh(position pos, short length, color c);
-    void drawlinev(position pos, short length, color c);
+    void drawlineh(position pos, short len, color c);
+    void drawlinev(position pos, short len, color c);
     void drawrect(const rectangle& rect, color c);        
     /* 占两个字符宽的比如汉字在边界处可能绘制不出来*/    
-    void drawtext(const std::string& s, position pos, color forecolor=white, color bkcolor=transparent);      
-    void drawtext(const std::wstring& s, position pos, color forecolor=white, color bkcolor=transparent);
+    void drawtext(const std::string& s, position pos, color fgcolor=white, color bgcolor=transparent);      
+    void drawtext(const std::wstring& s, position pos, color fgcolor=white, color bgcolor=transparent);
 
     static position homepos();
 
@@ -134,8 +134,8 @@ public:
 
 private:    
     void showcursor(bool show=true);
-    static WORD makecolor(color forecolor, color backcolor);
-    static void chforecolor(WORD& attr, color forecolor);
+    static WORD makecolor(color fgcolor, color bgcolor);
+    static void chfgcolor(WORD& attr, color fgcolor);
     static bool checkascii(char c);
     static bool checkascii(wchar_t c);
 
@@ -154,8 +154,8 @@ public:
     input();
     void update();
 
-    bool keydown(int virtualkey);
-    bool keyclick(int virtualkey);
+    bool keydown(int vk);
+    bool keyclick(int vk);
     bool buttondown(button btn);
     bool buttonclick(button btn);
     bool buttondblclick(button btn);
@@ -326,12 +326,12 @@ HANDLE draw::rawhandle() const
 { return m_backbuf; }
 
 inline 
-WORD draw::makecolor(color forecolor, color backcolor)
-{ return (backcolor<<4) | forecolor; }
+WORD draw::makecolor(color fgcolor, color bgcolor)
+{ return (bgcolor<<4) | fgcolor; }
 
 inline 
-void draw::chforecolor(WORD& attr, color forecolor)
-{ attr = (attr&0xF0) | forecolor; }
+void draw::chfgcolor(WORD& attr, color fgcolor)
+{ attr = (attr&0xF0) | fgcolor; }
 
 inline 
 bool draw::checkascii(char c) 
@@ -351,14 +351,14 @@ bool draw::checkascii(wchar_t c)
 /*========================= input =========================*/
 
 inline
-bool input::keydown(int virtualkey)
-{ return m_keysdown[toupper(virtualkey)]; }
+bool input::keydown(int vk)
+{ return m_keysdown[toupper(vk)]; }
 
 inline
-bool input::keyclick(int virtualkey)
+bool input::keyclick(int vk)
 {
-    return m_keysdown[toupper(virtualkey)]
-        && !m_lastkeysdown[toupper(virtualkey)];
+    return m_keysdown[toupper(vk)]
+        && !m_lastkeysdown[toupper(vk)];
 }
 
 inline

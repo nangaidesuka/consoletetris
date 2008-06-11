@@ -1,8 +1,8 @@
 #include "console1.h"
 #include <assert.h>
 
-#define DIM(array) (sizeof(array) / sizeof(*array))
-#define ZEROARRAY(array) memset(array, 0, sizeof(array));
+#define dim(array) (sizeof(array) / sizeof(*array))
+#define zeroarray(array) memset(array, 0, sizeof(array));
 
 namespace console {
 
@@ -11,7 +11,7 @@ namespace console {
 const char* invalidhandle::what() const
 {
     static char buf[256];
-    sprintf_s(buf, DIM(buf),
+    sprintf_s(buf, dim(buf),
         "Invalid handle: 0x%0x\n"
         "Error code: %d", 
         (long)m_handle, GetLastError());
@@ -22,7 +22,7 @@ const char* invalidhandle::what() const
 const char* unsupportsize::what() const
 {
     static char buf[256];
-    sprintf_s(buf, DIM(buf),
+    sprintf_s(buf, dim(buf),
         "Unsupport size: %d x %d",
         m_size->w, m_size->h);
     return buf;
@@ -110,14 +110,14 @@ void draw::drawpixel(position pos, color c)
     }
 }
 
-void draw::drawlineh(position pos, short length, color c)
+void draw::drawlineh(position pos, short len, color c)
 {    
-    drawrect(rectangle(pos, size(length, 1)), c);
+    drawrect(rectangle(pos, size(len, 1)), c);
 }
 
-void draw::drawlinev(position pos, short length, color c)
+void draw::drawlinev(position pos, short len, color c)
 {
-    drawrect(rectangle(pos, size(1, length)), c);
+    drawrect(rectangle(pos, size(1, len)), c);
 }
 
 void draw::drawrect(const rectangle& rect, color c) 
@@ -136,9 +136,9 @@ void draw::drawrect(const rectangle& rect, color c)
 }
 
 
-void draw::drawtext(const std::string& s, position pos, color forecolor, color bkcolor)
+void draw::drawtext(const std::string& s, position pos, color fgcolor, color bgcolor)
 {
-    assert (forecolor != transparent);
+    assert (fgcolor != transparent);
 
     /*
     ** 逐个字符绘制而不是整块绘制
@@ -157,10 +157,10 @@ void draw::drawtext(const std::string& s, position pos, color forecolor, color b
 
         if (checkascii(buf[0])) {
             if (m_wndrect.pointin(pos)) {                
-                WORD attr = makecolor(forecolor, bkcolor);
-                if (bkcolor == transparent) {
+                WORD attr = makecolor(fgcolor, bgcolor);
+                if (bgcolor == transparent) {
                     ReadConsoleOutputAttribute(m_backbuf, &attr, 1, pos, &read);
-                    chforecolor(attr, forecolor);
+                    chfgcolor(attr, fgcolor);
                 }
                 FillConsoleOutputAttribute(m_backbuf, attr, 1, pos, NULL);     
                 FillConsoleOutputCharacterA(m_backbuf, buf[0], 1, pos, NULL);
@@ -175,11 +175,11 @@ void draw::drawtext(const std::string& s, position pos, color forecolor, color b
                 position pos2(pos.x+1, pos.y);
                 if (m_wndrect.pointin(pos2)) {                    
                     WORD attr[2];
-                    attr[0] = attr[1] = makecolor(forecolor, bkcolor);
-                    if (bkcolor == transparent) {
+                    attr[0] = attr[1] = makecolor(fgcolor, bgcolor);
+                    if (bgcolor == transparent) {
                         ReadConsoleOutputAttribute(m_backbuf, attr, 2, pos, &read);
-                        chforecolor(attr[0], forecolor);
-                        chforecolor(attr[1], forecolor);
+                        chfgcolor(attr[0], fgcolor);
+                        chfgcolor(attr[1], fgcolor);
                     }
                     WriteConsoleOutputAttribute(m_backbuf, attr, 2, pos, NULL);
                     WriteConsoleOutputCharacterA(m_backbuf, buf, 2, pos, NULL);
@@ -190,9 +190,9 @@ void draw::drawtext(const std::string& s, position pos, color forecolor, color b
     }  
 }
 
-void draw::drawtext(const std::wstring& s, position pos, color forecolor, color bkcolor)
+void draw::drawtext(const std::wstring& s, position pos, color fgcolor, color bgcolor)
 {
-    assert (forecolor != transparent);
+    assert (fgcolor != transparent);
 
     /*
     ** 逐个字符绘制而不是整块绘制
@@ -212,10 +212,10 @@ void draw::drawtext(const std::wstring& s, position pos, color forecolor, color 
         if (checkascii(wc)) {
             char c = (char)wc;
             if (m_wndrect.pointin(pos)) {
-                WORD attr = makecolor(forecolor, bkcolor);
-                if (bkcolor == transparent) {
+                WORD attr = makecolor(fgcolor, bgcolor);
+                if (bgcolor == transparent) {
                     ReadConsoleOutputAttribute(m_backbuf, &attr, 1, pos, &read);
-                    chforecolor(attr, forecolor);
+                    chfgcolor(attr, fgcolor);
                 }
                 FillConsoleOutputAttribute(m_backbuf, attr, 1, pos, NULL);
                 FillConsoleOutputCharacterA(m_backbuf, c, 1, pos, NULL);
@@ -228,11 +228,11 @@ void draw::drawtext(const std::wstring& s, position pos, color forecolor, color 
                 position pos2(pos.x+1, pos.y);
                 if (m_wndrect.pointin(pos2)) {
                     WORD attr[2];
-                    attr[0] = attr[1] = makecolor(forecolor, bkcolor);
-                    if (bkcolor == transparent) {
+                    attr[0] = attr[1] = makecolor(fgcolor, bgcolor);
+                    if (bgcolor == transparent) {
                         ReadConsoleOutputAttribute(m_backbuf, attr, 2, pos, &read);
-                        chforecolor(attr[0], forecolor);
-                        chforecolor(attr[1], forecolor);
+                        chfgcolor(attr[0], fgcolor);
+                        chfgcolor(attr[1], fgcolor);
                     }
                     WriteConsoleOutputAttribute(m_backbuf, attr, 2, pos, NULL);
                     WriteConsoleOutputCharacterW(m_backbuf, &wc, 1, pos, NULL);
@@ -262,17 +262,17 @@ input::input()
 
     SetConsoleMode(m_inputhandle, ENABLE_MOUSE_INPUT);    
 
-    ZEROARRAY(m_keysdown);
-    ZEROARRAY(m_lastkeysdown);
-    ZEROARRAY(m_buttonsdown);
-    ZEROARRAY(m_lastbuttonsdown);    
+    zeroarray(m_keysdown);
+    zeroarray(m_lastkeysdown);
+    zeroarray(m_buttonsdown);
+    zeroarray(m_lastbuttonsdown);    
 }
 
 void input::update()
 {
     memcpy(m_lastkeysdown, m_keysdown, sizeof(m_keysdown));
     memcpy(m_lastbuttonsdown, m_buttonsdown, sizeof(m_buttonsdown));        
-    ZEROARRAY(m_buttonsdblclick);
+    zeroarray(m_buttonsdblclick);
     
     while (1) {
         DWORD eventcnt; 
