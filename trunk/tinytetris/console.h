@@ -115,6 +115,7 @@ enum color {
 */
 class draw {
 public:
+    /* 目前还没有办法判断最小窗口 */
     draw(size wndsize); 
     ~draw();
     void clear(color c=black);
@@ -124,7 +125,7 @@ public:
     void drawlineh(position pos, short len, color c);
     void drawlinev(position pos, short len, color c);
     void drawrect(const rectangle& rect, color c);        
-    /* 占两个字符宽的比如汉字在边界处可能绘制不出来*/        
+    /* 占两个字符宽的比如汉字在边界处可能绘制不出来 */        
     void drawtext(const std::string& s, position pos, color fgcolor=white, color bgcolor=transparent);
     void drawtext(const std::wstring& s, position pos, color fgcolor=white, color bgcolor=transparent);
 

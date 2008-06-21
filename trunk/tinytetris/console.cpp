@@ -1,4 +1,4 @@
-#include "console1.h"
+#include "console.h"
 #include <assert.h>
 
 #define dim(array) (sizeof(array) / sizeof(*array))
