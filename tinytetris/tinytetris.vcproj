@@ -174,15 +174,19 @@
 			>
 		</File>
 		<File
-			RelativePath=".\def.h"
-			>
-		</File>
-		<File
 			RelativePath=".\fpsctl.h"
 			>
 		</File>
 		<File
 			RelativePath=".\main.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\tinytetris.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\tinytetris.h"
 			>
 		</File>
 	</Files>
