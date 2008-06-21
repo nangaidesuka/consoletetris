@@ -1,4 +1,4 @@
-#include "console1.h"
+#include "console.h"
 #include "fpsctl.h"
 #include <assert.h>
 #include <stdio.h>
@@ -10,7 +10,7 @@ void main()
 
     fpsctl thefpsctl;
     using namespace console;
-    draw con(size(40, 25));
+    draw con(size(20, 25));
     
     input i;
     int y = 0;
